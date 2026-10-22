@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="assets/logo/meirellesworks-simbolo-marinho.svg">
+<meta property="og:title" content="MeirellesWorks">
+<meta property="og:description" content="Engenharia mecânica, automação industrial e IA aplicada ao CAD.">
+<meta property="og:url" content="https://meirellesworks.com/">
+<title>MeirellesWorks</title>
+<meta name="description" content="MeirellesWorks — engenharia mecânica, automação industrial e IA aplicada ao CAD. Projetos pessoais de impressão 3D, moto e marcenaria.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  /* Layout: folha de desenho técnico — margem com cotas, seções como vistas, legenda no rodapé. */
+  :root {
+    --bg: #F4F5F7;          /* branco técnico */
+    --sheet: #FFFFFF;
+    --ink: #121212;         /* preto industrial */
+    --ink-2: #4E5561;
+    --brand: #1B2A4A;       /* azul marinho técnico */
+    --line: #D5D8DD;
+    --grid: #E6E8EC;
+    --on-brand: #F4F5F7;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121212; --sheet: #1A1B1E; --ink: #F4F5F7; --ink-2: #B0B5BC;
+      --brand: #B0B5BC; --line: #33363B; --grid: #1F2124; --on-brand: #121212; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121212; --sheet: #1A1B1E; --ink: #F4F5F7; --ink-2: #B0B5BC;
+    --brand: #B0B5BC; --line: #33363B; --grid: #1F2124; --on-brand: #121212; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--mono); font-size: 15px; line-height: 1.65;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+  .wrap {
+    max-width: 1080px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  /* topo */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+  header.top {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: blur(6px); border-bottom: 1px solid var(--line);
+  }
+  header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 12px; }
+  .brandlink { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brandlink svg { width: 44px; height: auto; color: var(--brand); flex: none; }
+  .brandlink span { font-size: 15px; white-space: nowrap; }
+  nav ul { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; }
+  nav a { text-decoration: none; font-size: 13px; color: var(--ink-2); }
+  nav a { position: relative; display: inline-block; padding-block: 6px; }
+  nav a:hover { color: var(--ink); }
+  nav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--brand); transform: scaleX(0); transform-origin: left; transition: transform .35s ease; }
+  nav a[aria-current="page"] { color: var(--ink); font-weight: 700; }
+  nav a[aria-current="page"]::after, nav a:hover::after { transform: scaleX(1); }
+  @media (max-width: 640px) {
+    header.top .wrap { flex-direction: column; align-items: stretch; gap: 6px; padding-block: 10px 0; }
+    nav { overflow-x: auto; scrollbar-width: none; }
+    nav ul { gap: 18px; }
+    nav a { white-space: nowrap; padding-block: 8px; }
+  }
+
+  /* páginas: uma vista por vez, com troca animada */
+  .js .page:not(.on) { display: none; }
+  .page { padding-block: 56px 24px; min-height: 60vh; }
+  .page.on > .wrap > * { animation: rise .55s cubic-bezier(.2,.7,.2,1) both; }
+  .page.on > .wrap > *:nth-child(2) { animation-delay: .06s; }
+  .page.on > .wrap > *:nth-child(3) { animation-delay: .12s; }
+  .page.on > .wrap > *:nth-child(n+4) { animation-delay: .18s; }
+  .page.on .label::after { animation: draw .7s .15s cubic-bezier(.2,.7,.2,1) both; transform-origin: left; }
+  .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > * { animation: rise .5s cubic-bezier(.2,.7,.2,1) both; }
+  .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > *:nth-child(2) { animation-delay: .22s; }
+  .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > *:nth-child(3) { animation-delay: .28s; }
+  .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > *:nth-child(4) { animation-delay: .34s; }
+  .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > *:nth-child(n+5) { animation-delay: .4s; }
+  .page.leaving { animation: leave .2s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes draw { from { transform: translateY(-4px) scaleX(0); } to { transform: translateY(-4px) scaleX(1); } }
+  @keyframes leave { to { opacity: 0; transform: translateY(-8px); } }
+  /* trilho que varre o topo durante a troca, como os trilhos do logo */
+  .rail { position: fixed; left: 0; right: 0; top: env(safe-area-inset-top, 0px); height: 3px; background: var(--brand); z-index: 20; transform: scaleX(0); transform-origin: left; pointer-events: none; }
+  .rail.go { animation: rail .6s cubic-bezier(.6,0,.2,1) both; }
+  @keyframes rail { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; } 51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+  /* o logo do topo da home se desenha ao abrir */
+  .page.on .hero .logo path { stroke-dasharray: 1200; animation: trace 1.2s cubic-bezier(.4,0,.2,1) both; }
+  @keyframes trace { from { stroke-dashoffset: 1200; } to { stroke-dashoffset: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .page.on > .wrap > *, .page.on .label::after, .page.on :is(.services, .projects, .products, .tiers, .socials, .sheets) > *,
+    .page.leaving, .rail.go, .page.on .hero .logo path { animation: none !important; }
+  }
+
+  /* índice de folhas na home */
+  .sheets { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0; border: 1.5px solid var(--ink); background: var(--sheet); margin-top: 8px; }
+  .sheet { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; padding: 18px 20px; text-decoration: none; color: var(--ink); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; min-width: 0; }
+  .sheet:hover { background: var(--bg); }
+  .sheet .n { grid-row: span 2; font-size: 12px; color: var(--ink-2); padding-top: 3px; }
+  .sheet b { font-size: 15px; }
+  .sheet small { font-size: 12.5px; color: var(--ink-2); }
+
+  /* hero */
+  .hero { padding-block: 16px 40px; }
+  .hero .logo { color: var(--brand); width: 100%; max-width: 640px; height: auto; display: block; }
+  .hero .logo .wm { fill: var(--ink); }
+  .hero h1 {
+    margin: 40px 0 0; font-size: clamp(26px, 4.4vw, 44px); line-height: 1.15; font-weight: 700;
+    letter-spacing: -0.02em; max-width: 22ch; text-wrap: balance;
+  }
+  .hero p.lede { margin: 18px 0 0; max-width: 60ch; color: var(--ink-2); }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px;
+    border: 1.5px solid var(--brand); border-radius: 2px; text-decoration: none;
+    font-family: var(--mono); font-size: 14px; font-weight: 500; cursor: pointer; background: transparent; color: var(--ink);
+  }
+  .btn.solid { background: var(--brand); color: var(--on-brand); }
+  .btn:hover { transform: translateY(-1px); }
+  @media (prefers-reduced-motion: reduce) { .btn:hover { transform: none; } }
+
+  /* seções */
+  html:not(.js) .page + .page { border-top: 1px solid var(--line); }
+  .label {
+    display: flex; align-items: baseline; gap: 12px; margin: 0 0 8px;
+    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .label::after { content: ""; flex: 1; border-bottom: 1px dashed var(--line); transform: translateY(-4px); }
+  h2 { margin: 0 0 12px; font-size: clamp(22px, 3vw, 30px); line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+  .intro { margin: 0 0 32px; max-width: 62ch; color: var(--ink-2); }
+
+  /* serviços: tabela tipo lista de peças */
+  .services { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .svc { background: var(--sheet); border: 1px solid var(--line); padding: 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .svc .code { font-size: 12px; color: var(--ink-2); letter-spacing: 0.06em; }
+  .svc h3 { margin: 0; font-size: 18px; line-height: 1.3; }
+  .svc p { margin: 0; color: var(--ink-2); font-size: 14px; }
+  .svc ul { margin: 4px 0 0; padding-left: 18px; font-size: 13.5px; }
+  .svc li { margin-top: 4px; }
+
+  /* projetos */
+  .projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .proj {
+    position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    padding: 20px; background: var(--sheet); border: 1px solid var(--line); text-decoration: none; color: var(--ink);
+  }
+  .proj:hover { border-color: var(--brand); }
+  .proj .spec { font-size: 12px; color: var(--ink-2); }
+  .proj h3 { margin: 0; font-size: 17px; }
+  .proj p { margin: 0; font-size: 14px; color: var(--ink-2); flex: 1; }
+  .proj .go { font-size: 13px; font-weight: 500; color: var(--brand); }
+
+  /* loja */
+  .shop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 8px 0 14px; flex-wrap: wrap; }
+  .shop-head h3 { margin: 0; font-size: 17px; }
+  .shop-head + .tiers, .products + .shop-head { margin-top: 0; }
+  .products + .shop-head { margin-top: 40px; }
+  .cur { font-size: 12px; letter-spacing: 0.1em; padding: 3px 8px; border: 1px solid var(--brand); color: var(--brand); }
+  .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .prod { background: var(--sheet); border: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+  .prod .ph { aspect-ratio: 4 / 3; max-width: 100%; border-bottom: 1px solid var(--line); display: grid; place-items: center; color: var(--line);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 12px 12px; }
+  .prod .ph svg { width: 46%; height: auto; color: var(--ink-2); opacity: .55; }
+  .prod .body { padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .prod .tag { font-size: 11.5px; color: var(--ink-2); letter-spacing: 0.06em; text-transform: uppercase; }
+  .prod h4 { margin: 0; font-size: 15.5px; }
+  .prod p { margin: 0; font-size: 13.5px; color: var(--ink-2); flex: 1; }
+  .prod .buy { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .price { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .btn.sm { padding: 8px 12px; font-size: 13px; }
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .tier { background: var(--sheet); border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .tier.feat { border: 1.5px solid var(--brand); }
+  .tier .tag { font-size: 11.5px; color: var(--ink-2); letter-spacing: 0.06em; text-transform: uppercase; }
+  .tier h4 { margin: 0; font-size: 17px; }
+  .tier .price { font-size: 22px; }
+  .tier ul { margin: 0; padding-left: 18px; font-size: 13.5px; flex: 1; }
+  .tier li { margin-top: 4px; }
+  .shopnote { margin-top: 16px; }
+
+  /* redes */
+  .socials { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0; border: 1px solid var(--line); background: var(--sheet); }
+  .soc {
+    display: flex; align-items: center; gap: 12px; padding: 18px 20px; text-decoration: none; color: var(--ink);
+    border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; margin: 0 -1px -1px 0;
+  }
+  .soc:hover { background: var(--bg); }
+  .soc svg { width: 22px; height: 22px; flex: none; fill: currentColor; color: var(--brand); }
+  .soc b { display: block; font-size: 14px; }
+  .soc small { display: block; font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+
+  /* contato */
+  .contact { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: start; }
+  @media (max-width: 820px) { .contact { grid-template-columns: 1fr; } }
+  .mailbox { background: var(--sheet); border: 1px solid var(--line); padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .mail { font-size: clamp(15px, 2.2vw, 19px); font-weight: 700; user-select: all; overflow-wrap: anywhere; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .note { font-size: 12.5px; color: var(--ink-2); margin: 0; }
+  form { display: grid; gap: 14px; background: var(--sheet); border: 1px solid var(--line); padding: 24px; }
+  label { display: grid; gap: 6px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  input, select, textarea {
+    font: 14px/1.5 var(--mono); color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px; width: 100%;
+  }
+  textarea { min-height: 120px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
+  .status { font-size: 13px; color: var(--ink-2); min-height: 1.4em; margin: 0; }
+
+  /* legenda (title block) */
+  footer { padding-block: 40px 48px; }
+  .titleblock {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; border: 1.5px solid var(--ink); background: var(--sheet); font-size: 12px;
+  }
+  .titleblock > div { padding: 10px 12px; border-right: 1px solid var(--ink); min-width: 0; }
+  .titleblock > div:last-child { border-right: 0; }
+  .titleblock small { display: block; color: var(--ink-2); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .titleblock b { font-size: 13px; }
+  @media (max-width: 640px) {
+    .titleblock { grid-template-columns: 1fr 1fr; }
+    .titleblock > div:nth-child(2) { border-right: 0; }
+    .titleblock > div:nth-child(-n+2) { border-bottom: 1px solid var(--ink); }
+  }
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <clipPath id="mw-band"><rect x="-30" y="0" width="1100" height="210"/></clipPath><clipPath id="mw-edge"><polygon points="0,-10 1000,-10 1000,230 -17.28,230 0,191.8"/></clipPath><clipPath id="mw-edge-s"><polygon points="0,-10 380,-10 380,191.8 397.28,230 -17.28,230 0,191.8"/></clipPath>
+    <g id="mw-symbol" fill="none" stroke="currentColor" stroke-linejoin="miter">
+      <g clip-path="url(#mw-edge-s)">
+        <g clip-path="url(#mw-band)">
+          <path d="M-9.05 -20 L95 210 L190 0 L285 210 L389.05 -20" stroke-width="4"/>
+          <path d="M-9.05 230 L95 0 L190 210 L285 0 L389.05 230" stroke-width="15"/>
+        </g>
+        <path d="M-20 0 H400 M-20 210 H400" stroke-width="5"/>
+      </g>
+    </g>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brandlink" href="#inicio" aria-label="MeirellesWorks, início">
+      <svg viewBox="-12 -12 404 234" aria-hidden="true"><use href="#mw-symbol"/></svg>
+      <span>Meirelles<b>Works</b></span>
+    </a>
+    <nav aria-label="Seções">
+      <ul>
+        <li><a href="#servicos">Serviços</a></li>
+        <li><a href="#projetos">Projetos</a></li>
+        <li><a href="#loja">Loja</a></li>
+        <li><a href="#redes">Redes</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="rail" id="rail" aria-hidden="true"></div>
+<main>
+ <section class="page" id="v-inicio" data-view="inicio" aria-label="Início">
+  <div class="wrap hero">
+    <svg class="logo" viewBox="-12 -12 806 234" role="img" aria-label="Logo MeirellesWorks">
+      <g fill="none" stroke="currentColor" stroke-linejoin="miter">
+        <g clip-path="url(#mw-edge)">
+          <g clip-path="url(#mw-band)">
+            <path d="M-9.05 -20 L95 210 L190 0 L285 210 L389.05 -20" stroke-width="4"/>
+            <path d="M-9.05 230 L95 0 L190 210 L285 0 L389.05 230" stroke-width="15"/>
+          </g>
+          <path d="M-20 0 H782 M-20 210 H782" stroke-width="5"/>
+        </g>
+      </g>
+      <text class="wm" x="392" y="126" font-family="JetBrains Mono, ui-monospace, monospace" font-size="47" textLength="390" lengthAdjust="spacingAndGlyphs"><tspan font-weight="400">Meirelles</tspan><tspan font-weight="700">Works</tspan></text>
+    </svg>
+    <h1>Engenharia mecânica, automação e IA aplicada ao CAD.</h1>
+    <p class="lede">Sou Meirelles, engenheiro mecânico com 14 anos de CAD. Ajudo pequenas e médias empresas a projetar máquinas, automatizar processos e implantar IA como ferramenta de apoio no fluxo de engenharia. Nas horas vagas, imprimo, usino, monto e documento tudo em código aberto.</p>
+    <div class="ctas">
+      <a class="btn solid" href="#contato">Solicitar orçamento</a>
+      <a class="btn" href="#projetos">Ver projetos</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="label">Lista de folhas</p>
+    <nav class="sheets" aria-label="Páginas do site">
+      <a class="sheet" href="#servicos"><span class="n">A</span><b>Serviços</b><small>Engenharia para empresas</small></a>
+      <a class="sheet" href="#projetos"><span class="n">B</span><b>Projetos</b><small>Impressão 3D, moto, marcenaria</small></a>
+      <a class="sheet" href="#loja"><span class="n">C</span><b>Loja</b><small>Peças, arquivos e projetos sob medida</small></a>
+      <a class="sheet" href="#redes"><span class="n">D</span><b>Redes</b><small>GitHub, YouTube, Instagram, LinkedIn</small></a>
+      <a class="sheet" href="#contato"><span class="n">E</span><b>Contato</b><small>Orçamentos e parcerias</small></a>
+    </nav>
+  </div>
+ </section>
+
+  <section class="page" id="v-servicos" data-view="servicos" aria-labelledby="h-servicos">
+    <div class="wrap">
+      <p class="label">Vista A · Serviços</p>
+      <h2 id="h-servicos">O que faço para empresas</h2>
+      <p class="intro">Projetos sob medida para indústrias e empresas de engenharia de pequeno e médio porte. Do conceito ao desenho de fabricação.</p>
+      <div class="services">
+        <article class="svc">
+          <span class="code">SRV-01</span>
+          <h3>IA aplicada ao CAD</h3>
+          <p>Consultoria para implantar IA no fluxo de projeto, sem trocar o software que a equipe já usa.</p>
+          <ul>
+            <li>Automação de modelagem e detalhamento</li>
+            <li>Geração de listas de peças e desenhos</li>
+            <li>Agentes de IA integrados a FreeCAD e Onshape</li>
+            <li>Treinamento da equipe de engenharia</li>
+          </ul>
+        </article>
+        <article class="svc">
+          <span class="code">SRV-02</span>
+          <h3>Projeto mecânico para automação industrial</h3>
+          <p>Máquinas, dispositivos e estações automatizadas, projetados para fabricar e montar sem retrabalho.</p>
+          <ul>
+            <li>Dispositivos e gabaritos de produção</li>
+            <li>Estruturas em chapa cortada a laser e tubos</li>
+            <li>Integração com robôs, cobots e atuadores</li>
+            <li>Desenhos de fabricação e BOM</li>
+          </ul>
+        </article>
+        <article class="svc">
+          <span class="code">SRV-03</span>
+          <h3>Desenvolvimento de produto</h3>
+          <p>Outros serviços de engenharia, do protótipo à documentação.</p>
+          <ul>
+            <li>Modelagem 3D e prototipagem por impressão 3D</li>
+            <li>Simulação e animação de máquinas</li>
+            <li>Revisão de projetos existentes</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="v-projetos" data-view="projetos" aria-labelledby="h-projetos">
+    <div class="wrap">
+      <p class="label">Vista B · Projetos pessoais</p>
+      <h2 id="h-projetos">Da oficina para a internet</h2>
+      <p class="intro">Os projetos pessoais vivem nas redes. Cada frente abaixo leva para onde ela é documentada.</p>
+      <div class="projects" id="projects"></div>
+    </div>
+  </section>
+
+  <section class="page" id="v-loja" data-view="loja" aria-labelledby="h-loja">
+    <div class="wrap">
+      <p class="label">Vista C · Loja</p>
+      <h2 id="h-loja">Loja MeirellesWorks</h2>
+      <p class="intro">Duas linhas de venda: peças impressas e arquivos de projeto para quem está no Brasil, e projetos mecânicos sob medida para clientes de qualquer país.</p>
+
+      <div class="shop-head">
+        <h3>Peças e arquivos</h3><span class="cur">BRL · R$</span>
+      </div>
+      <div class="products" id="products"></div>
+
+      <div class="shop-head">
+        <h3>Projeto mecânico sob medida</h3><span class="cur">USD · US$</span>
+      </div>
+      <div class="tiers" id="tiers"></div>
+      <p class="note shopnote">Loja em implantação. Os botões levam ao contato até o checkout entrar no ar.</p>
+    </div>
+  </section>
+
+  <section class="page" id="v-redes" data-view="redes" aria-labelledby="h-redes">
+    <div class="wrap">
+      <p class="label">Vista D · Redes</p>
+      <h2 id="h-redes">Onde acompanhar</h2>
+      <p class="intro">Código no GitHub, processo no Instagram e no YouTube e trajetória no LinkedIn.</p>
+      <div class="socials" id="socials"></div>
+    </div>
+  </section>
+
+  <section class="page" id="v-contato" data-view="contato" aria-labelledby="h-contato">
+    <div class="wrap contact">
+      <div>
+        <p class="label">Vista E · Contato</p>
+        <h2 id="h-contato">Vamos conversar sobre o seu projeto</h2>
+        <p class="intro">Conte o problema, o prazo e o que já existe (modelos, desenhos, fotos). Respondo em até dois dias úteis com os próximos passos.</p>
+        <div class="mailbox">
+          <span class="note">E-mail</span>
+          <span class="mail" id="mail"></span>
+          <div class="row">
+            <button class="btn solid" type="button" id="copy">Copiar e-mail</button>
+            <a class="btn" id="mailto" href="#">Abrir no app de e-mail</a>
+          </div>
+          <p class="status" id="copyStatus" aria-live="polite"></p>
+        </div>
+      </div>
+      <form id="form" novalidate>
+        <label for="f-nome">Nome<input id="f-nome" name="nome" autocomplete="name" required></label>
+        <label for="f-empresa">Empresa<input id="f-empresa" name="empresa" autocomplete="organization"></label>
+        <label for="f-servico">Serviço
+          <select id="f-servico" name="servico">
+            <option>IA aplicada ao CAD</option>
+            <option>Projeto mecânico para automação industrial</option>
+            <option>Desenvolvimento de produto</option>
+            <option>Outro</option>
+          </select>
+        </label>
+        <label for="f-msg">Mensagem<textarea id="f-msg" name="mensagem" required placeholder="Ex.: preciso de um dispositivo de fixação para soldar um quadro de 1,2 m, produção de 40 peças/mês."></textarea></label>
+        <button class="btn solid" type="submit">Montar e-mail</button>
+        <p class="status" id="formStatus" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="titleblock">
+      <div><small>Título</small><b>MeirellesWorks</b></div>
+      <div><small>Autor</small><b>E. Meirelles</b></div>
+      <div><small>Escala</small><b>1:1</b></div>
+      <div><small>Rev.</small><b id="year"></b></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ===== CONFIGURAÇÃO: troque aqui os links e o e-mail ===== */
+  const CONFIG = {
+    email: "contato@meirellesworks.com",
+    social: {
+      github:    "https://github.com/meirellesworks",
+      youtube:   "https://www.youtube.com/@meirellesworks",
+      instagram: "https://www.instagram.com/meirellesworks",
+      linkedin:  "https://www.linkedin.com/in/meirellesworks"
+    }
+  };
+
+  const ICONS = {
+    github: '<path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.3 4.6 18.3 5 18.3 5c.7 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5Z"/>',
+    youtube: '<path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/>',
+    instagram: '<path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.8c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2Zm0 4.6a5.2 5.2 0 1 0 0 10.4 5.2 5.2 0 0 0 0-10.4Zm0 8.6a3.4 3.4 0 1 1 0-6.8 3.4 3.4 0 0 1 0 6.8Zm5.4-9.9a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z"/>',
+    twitter: '<path d="M18.2 2.3h3.4l-7.4 8.4 8.7 11h-6.8l-5.3-6.9-6.1 6.9H1.3l7.9-9L.8 2.3h7l4.8 6.3 5.6-6.3Zm-1.2 17.4h1.9L7 4.2H5l12 15.5Z"/>',
+    linkedin: '<path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.3V9h3.4v1.6h.1c.5-.9 1.6-1.8 3.4-1.8 3.6 0 4.3 2.4 4.3 5.5v6.2ZM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2ZM7.1 20.5H3.5V9h3.6v11.5ZM22.2 0H1.8C.8 0 0 .8 0 1.7v20.6c0 .9.8 1.7 1.8 1.7h20.4c1 0 1.8-.8 1.8-1.7V1.7C24 .8 23.2 0 22.2 0Z"/>'
+  };
+
+  const SOCIAL_META = [
+    ["github", "GitHub", "Código e arquivos open-source"],
+    ["youtube", "YouTube", "Processo e montagem em vídeo"],
+    ["instagram", "Instagram", "Fotos da oficina"],
+    ["linkedin", "LinkedIn", "Trajetória profissional"]
+  ];
+
+  const PROJECTS = [
+    { spec: "Ender 3 V3 SE · PLA/PETG", title: "Impressão 3D", text: "Peças funcionais, suportes e protótipos modelados do zero, com arquivos para imprimir.", net: "github" },
+    { spec: "Royal Enfield Meteor 350", title: "Moto e customização", text: "Manutenção, peças sob medida e acessórios projetados para a Meteor.", net: "youtube" },
+    { spec: "Madeira · corte e encaixe", title: "Marcenaria", text: "Móveis e peças de oficina, do desenho cotado à última demão.", net: "instagram" },
+    { spec: "Licença aberta", title: "Projetos open-source", text: "Modelos CAD, scripts e ferramentas de engenharia publicados para qualquer um usar.", net: "github" }
+  ];
+
+  /* ===== LOJA: troque price por valores reais e checkout pelo link de pagamento (Mercado Pago / Stripe) ===== */
+  const PRODUCTS = [
+    { tag: "Impressão 3D", title: "Peça impressa sob encomenda", text: "Peça funcional em PLA ou PETG, impressa a partir do seu arquivo ou de um modelo da loja.", price: null, checkout: null },
+    { tag: "Arquivo digital", title: "Modelo STL / STEP", text: "Arquivos dos projetos open-source em versão pronta para fabricar, com instruções.", price: null, checkout: null },
+    { tag: "Moto", title: "Acessório para Meteor 350", text: "Suportes e peças de customização projetados e testados na própria moto.", price: null, checkout: null },
+    { tag: "Marcenaria", title: "Peça em madeira", text: "Peças e organizadores de oficina feitos sob medida.", price: null, checkout: null }
+  ];
+  const TIERS = [
+    { tag: "Conceito", title: "Concept design", items: ["Briefing e requisitos", "Modelo 3D conceitual", "1 rodada de revisão", "Entrega em STEP + imagens"], price: null, checkout: null },
+    { tag: "Mais pedido", title: "Projeto completo", items: ["Tudo do Concept", "Detalhamento para fabricação (PDF + DXF)", "Lista de peças (BOM)", "2 rodadas de revisão"], price: null, checkout: null, feat: true },
+    { tag: "Engenharia", title: "Projeto + validação", items: ["Tudo do Projeto completo", "Análise estrutural (FEA)", "Animação do funcionamento", "Suporte na fabricação"], price: null, checkout: null }
+  ];
+  const fmt = (v, cur) => v == null ? "Sob consulta" : new Intl.NumberFormat(cur === "USD" ? "en-US" : "pt-BR", { style: "currency", currency: cur }).format(v);
+  const ext = (a) => { a.target = "_blank"; a.rel = "noopener"; };
+  const glyph = '<svg viewBox="-12 -12 404 234" aria-hidden="true"><use href="#mw-symbol"/></svg>';
+
+  const products = document.getElementById("products");
+  PRODUCTS.forEach(p => {
+    const el = document.createElement("article"); el.className = "prod";
+    const href = p.checkout || "#contato", label = p.checkout ? "Comprar" : "Encomendar";
+    el.innerHTML = `<div class="ph">${glyph}</div><div class="body"><span class="tag">${p.tag}</span><h4>${p.title}</h4><p>${p.text}</p><div class="buy"><span class="price">${fmt(p.price, "BRL")}</span><a class="btn sm solid" href="${href}">${label}</a></div></div>`;
+    if (p.checkout) ext(el.querySelector("a"));
+    products.appendChild(el);
+  });
+
+  const tiers = document.getElementById("tiers");
+  TIERS.forEach(t => {
+    const el = document.createElement("article"); el.className = "tier" + (t.feat ? " feat" : "");
+    const href = t.checkout || "#contato", label = t.checkout ? "Contratar" : "Pedir orçamento";
+    el.innerHTML = `<span class="tag">${t.tag}</span><h4>${t.title}</h4><span class="price">${fmt(t.price, "USD")}</span><ul>${t.items.map(i => `<li>${i}</li>`).join("")}</ul><a class="btn ${t.feat ? "solid" : ""}" href="${href}">${label}</a>`;
+    if (t.checkout) ext(el.querySelector("a"));
+    tiers.appendChild(el);
+  });
+
+  const socials = document.getElementById("socials");
+  SOCIAL_META.forEach(([key, name, desc]) => {
+    const a = document.createElement("a");
+    a.className = "soc"; a.href = CONFIG.social[key]; ext(a);
+    a.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[key]}</svg><span><b>${name}</b><small>${desc}</small></span>`;
+    socials.appendChild(a);
+  });
+
+  const nameOf = (k) => SOCIAL_META.find(s => s[0] === k)[1];
+  const projects = document.getElementById("projects");
+  PROJECTS.forEach(p => {
+    const a = document.createElement("a");
+    a.className = "proj"; a.href = CONFIG.social[p.net]; ext(a);
+    a.innerHTML = `<span class="spec">${p.spec}</span><h3>${p.title}</h3><p>${p.text}</p><span class="go">Ver no ${nameOf(p.net)} →</span>`;
+    projects.appendChild(a);
+  });
+
+  /* ===== NAVEGAÇÃO: uma página por vez ===== */
+  document.documentElement.classList.add("js");
+  const pages = [...document.querySelectorAll(".page")];
+  const navLinks = [...document.querySelectorAll("header nav a")];
+  const rail = document.getElementById("rail");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let current = null;
+
+  function show(view, animate) {
+    const next = pages.find(p => p.dataset.view === view) || pages[0];
+    if (next === current) return;
+    const swap = () => {
+      pages.forEach(p => p.classList.remove("on", "leaving"));
+      next.classList.add("on");
+      current = next;
+      window.scrollTo(0, 0);
+      navLinks.forEach(a => a.toggleAttribute("aria-current", a.getAttribute("href") === "#" + next.dataset.view));
+      navLinks.forEach(a => { if (a.hasAttribute("aria-current")) a.setAttribute("aria-current", "page"); });
+      const h = next.querySelector("h1, h2"); if (h && animate) { h.tabIndex = -1; h.focus({ preventScroll: true }); }
+      const link = navLinks.find(a => a.getAttribute("href") === "#" + next.dataset.view);
+      document.title = link ? `${link.textContent} · MeirellesWorks` : "MeirellesWorks";
+    };
+    if (!animate || reduce || !current) { swap(); return; }
+    rail.classList.remove("go"); void rail.offsetWidth; rail.classList.add("go");
+    current.classList.add("leaving");
+    setTimeout(swap, 200);
+  }
+
+  const viewFromHash = () => (location.hash || "#inicio").slice(1);
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    const v = a.getAttribute("href").slice(1);
+    if (!pages.some(p => p.dataset.view === v)) return;
+    e.preventDefault();
+    if (location.hash !== "#" + v) history.pushState(null, "", "#" + v);
+    show(v, true);
+  });
+  window.addEventListener("popstate", () => show(viewFromHash(), true));
+  window.addEventListener("hashchange", () => show(viewFromHash(), true));
+  show(viewFromHash(), false);
+
+  document.getElementById("mail").textContent = CONFIG.email;
+  document.getElementById("mailto").href = "mailto:" + CONFIG.email;
+  document.getElementById("year").textContent = String(new Date().getFullYear());
+
+  const copyStatus = document.getElementById("copyStatus");
+  document.getElementById("copy").addEventListener("click", () => {
+    const done = () => { copyStatus.textContent = "E-mail copiado."; };
+    const fallback = () => {
+      const r = document.createRange(); r.selectNodeContents(document.getElementById("mail"));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      copyStatus.textContent = "Selecionei o e-mail. Use Ctrl+C para copiar.";
+    };
+    try { navigator.clipboard.writeText(CONFIG.email).then(done, fallback); } catch (e) { fallback(); }
+  });
+
+  document.getElementById("form").addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const f = ev.target, st = document.getElementById("formStatus");
+    const nome = f.nome.value.trim(), msg = f.mensagem.value.trim();
+    if (!nome || !msg) { st.textContent = "Preencha o nome e a mensagem."; return; }
+    const subject = `[${f.servico.value}] Contato de ${nome}`;
+    const body = `Nome: ${nome}\nEmpresa: ${f.empresa.value.trim() || "-"}\nServiço: ${f.servico.value}\n\n${msg}`;
+    window.location.href = `mailto:${CONFIG.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    st.textContent = `Se o seu app de e-mail não abriu, escreva para ${CONFIG.email}.`;
+  });
+</script>
+</body>
+</html>
